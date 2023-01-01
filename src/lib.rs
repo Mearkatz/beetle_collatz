@@ -1,3 +1,5 @@
+/// A collection of functions relating to the Collatz conjecture
+
 /// This has the effect of dividing a number by 2 until it is odd.
 /// Odd numbers are simply returned.
 pub fn divide_while_even(n: u128) -> u128 {
@@ -215,8 +217,8 @@ pub mod check_range {
 
         /// Same as check_range_omega, but takes advantage of knowing all the numbers in the range are odd first
         pub fn check_range_omega_all_odds(start: u128, end: u128, step: usize) -> bool {
-            assert!(start & 1 == 1); // start must be odd, since it's the first number we check
-            assert!(step & 1 != 1); // step must be even
+            assert!(start % 2 != 0); // start must be odd, since it's the first number we check
+            assert!(step % 2 == 0); // step must be even
 
             (start..end)
                 .step_by(step)
@@ -225,8 +227,8 @@ pub mod check_range {
     }
 
     pub mod multi_threaded {        
-        use rayon::prelude::*;
         use std::ops::Range;
+        use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 
         /// Checks that a range of numbers all fall to one
         /// Only for use in dev-mode
