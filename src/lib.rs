@@ -1,4 +1,4 @@
-/// A collection of functions relating to the Collatz conjecture
+//! A collection of functions relating to the Collatz conjecture
 
 /// This has the effect of dividing a number by 2 until it is odd.
 /// Odd numbers are simply returned.
