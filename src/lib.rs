@@ -52,11 +52,9 @@ pub mod rules {
     }
 }
 
-/**
-Contains functions that apply the rules of the collatz conjecture until a number reaches one
-Functions herein with no return value are meant for benchmarking -- and because return values aren't strictly necessary.
-If needed there are also versions of each function that return a boolean value if they succeed.
-*/
+/// Contains functions that apply the rules of the collatz conjecture until a number reaches one
+/// Functions herein with no return value are meant for benchmarking -- and because return values aren't strictly necessary.
+/// If needed there are also versions of each function that return a boolean value if they succeed.
 pub mod fall {
     /// Applies the rules of the collatz conjecture until a number reaches one
     /// This exists only to test how fast other functions are in comparison.    
@@ -202,50 +200,31 @@ pub mod steps_range {
 
 /// For checking to see if ranges of numbers fall to 1
 pub mod check_range {
-    pub mod single_threaded {
-        use std::ops::Range;
+    use std::ops::Range;
 
-        /// Checks a range of numbers to ensure they all fall to 1.
-        pub fn check_range_unoptimized(mut nums: Range<u128>) -> bool {
-            nums.all(crate::fall::standard_boolean)
-        }
-
-        /// Same as check_range_unoptimized but uses fall::omega_boolean instead of fall::standard_boolean
-        pub fn check_range_omega(mut nums: Range<u128>) -> bool {
-            nums.all(crate::fall::omega_boolean)
-        }
-
-        /// Same as check_range_omega, but takes advantage of knowing all the numbers in the range are odd first
-        pub fn check_range_omega_all_odds(start: u128, end: u128, step: usize) -> bool {
-            assert!(start % 2 != 0); // start must be odd, since it's the first number we check
-            assert!(step % 2 == 0); // step must be even
-
-            (start..end)
-                .step_by(step)
-                .all(crate::fall::omega_boolean_n_is_odd)
-        }
+    /// Checks a range of numbers to ensure they all fall to 1.
+    pub fn check_range_unoptimized(mut nums: Range<u128>) -> bool {
+        nums.all(crate::fall::standard_boolean)
     }
 
-    pub mod multi_threaded {        
-        use std::ops::Range;
-        use rayon::prelude::{IntoParallelIterator, ParallelIterator};
+    /// Same as check_range_unoptimized but uses fall::omega_boolean instead of fall::standard_boolean
+    pub fn check_range_omega(mut nums: Range<u128>) -> bool {
+        nums.all(crate::fall::omega_boolean)
+    }
 
-        /// Checks that a range of numbers all fall to one
-        /// Only for use in dev-mode
-        /// The compiler may remove these function calls
-        pub fn unoptimized(nums: Range<u128>) -> bool {
-            nums.into_par_iter().all(crate::fall::standard_boolean)
-        }
+    /// Same as check_range_omega, but takes advantage of knowing all the numbers in the range are odd first
+    pub fn check_range_omega_all_odds(start: u128, end: u128, step: usize) -> bool {
+        assert!(start % 2 != 0); // start must be odd, since it's the first number we check
+        assert!(step % 2 == 0); // step must be even
 
-        pub fn optimized(nums: Range<u128>) -> bool {
-            nums.into_par_iter().all(crate::fall::omega_boolean)
-        }
+        (start..end)
+            .step_by(step)
+            .all(crate::fall::omega_boolean_n_is_odd)
     }
 }
 
 /// Functions for finding numbers who take the most steps to reach 1, given the rules.
 pub mod bouncy_numbers {
-    use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 
     /// Finds a number N that takes the most steps S to reach 1 in a given range
     /// Returns (N, S)
@@ -281,24 +260,7 @@ pub mod bouncy_numbers {
             .unwrap()
     }
 
-    /// Same as `bouncy_numbers::optimized`, but is multi-threaded and probably way faster
-    pub fn multi_threaded(start: u128, end: u128) -> (u128, u32) {
-        assert!((start > 0) && (start < end)); // preventing weirdness
-
-        (start..end)
-            .into_par_iter()
-            .map(|n| (n, crate::steps::omega(n)))
-            .reduce(
-                || (0_u128, 0_u32),
-                |(a, a_steps), (b, b_steps)| -> (u128, u32) {
-                    if a_steps > b_steps {
-                        (a, a_steps)
-                    } else {
-                        (b, b_steps)
-                    }
-                },
-            )
-    }
+    
 
     /// Finds every number N, which takes more steps to reach 1 than all numbers before it.
     /// Returns this as a sequence starting at START, and ending at END, with every number N paired with its corresponding number of steps S
