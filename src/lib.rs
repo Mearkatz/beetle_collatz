@@ -3,11 +3,6 @@
 /// This has the effect of dividing a number by 2 until it is odd.
 /// Odd numbers are simply returned.
 pub fn divide_while_even(n: u128) -> u128 {
-    n / (1 << n.trailing_zeros())
-}
-
-/// Same as divide_while_even but potentially faster
-pub fn divide_while_even_2(n: u128) -> u128 {
     n >> n.trailing_zeros()
 }
 
