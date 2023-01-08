@@ -74,10 +74,9 @@ pub mod fall {
         // If n is even, return immediately,
         // because the number will decrease,
         // which also means it will reach 1.
-        if n & 1 != 1 {
-            return;
+        if n & 1 == 1 {
+            omega_n_is_odd(n)
         }
-        omega_n_is_odd(n);
     }
 
     /// Slightly faster than omega when N is odd
@@ -126,6 +125,30 @@ pub mod fall {
     pub fn omega_boolean_n_is_even(_n: u128) -> bool {
         true
     }
+
+    /// Aims to potentially be faster than omega. if it is, it should become the new omega.
+    pub fn zeta(mut n: u128) {
+        loop {    
+            // Even numbers decrease, so this will reach 1.
+            // Odd numbers that can be divided by 2 multiple times before being odd again decrease, therefore they will reach 1.
+            // if !odd || (odd && (next_if_odd.trailing_zeros() > 1)) {
+            //     return;
+            // }
+
+            if !((n & 1 == 1) ^ ((3 * n + 1).trailing_zeros() > 1)) {
+                return;
+            }
+
+            /*
+            N is guaranteed to be ODD after (3n+1)/2-ing it
+            So we (3n+1) it again.
+            */
+            //n = next_if_odd / 2;
+            //n = 3 * n + 1;
+            
+            n = (9 * n + 5) / 2;
+        }
+    }
 }
 
 /// Functions for counting how many steps a number takes to reach 1
@@ -168,7 +191,7 @@ pub mod steps {
             // See rules_super_speed for an explanation
             let m = 3 * n + 1;
             let zeros = m.trailing_zeros();
-            n = m / (1 << zeros);
+            n = m >> zeros;
             steps += zeros + 1;
         }
         steps
@@ -254,8 +277,6 @@ pub mod bouncy_numbers {
             })
             .unwrap()
     }
-
-    
 
     /// Finds every number N, which takes more steps to reach 1 than all numbers before it.
     /// Returns this as a sequence starting at START, and ending at END, with every number N paired with its corresponding number of steps S
