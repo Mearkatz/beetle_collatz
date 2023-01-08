@@ -71,28 +71,14 @@ pub mod fall {
     }
 
     /// fall::alpha but MUCH FASTER.    
-    pub fn omega(n: u128) {
+    pub fn omega(mut n: u128) {
         // If n is even, return immediately,
         // because the number will decrease,
         // which also means it will reach 1.
-        if n & 1 == 1 {
-            omega_n_is_odd(n);
-        }
-    }
+        // if n & 1 == 1 {
+        //     omega_n_is_odd(n);
+        // }
 
-    /// Same as Omega, but faster than Omega when N is known to be odd, since it bypasses an if-statement.
-    pub fn omega_n_is_odd(mut n: u128) {
-        loop {
-            let m = 3 * n + 1;
-            if m.trailing_zeros() > 1 {
-                return;
-            }
-            n = m / 2;
-        }
-    }
-
-    /// fall::omega but -- slightly faster or slower, I'm not sure yet.
-    pub fn gamma(mut n: u128) {
         loop {
             let odd = n & 1 == 1;
 
@@ -115,6 +101,17 @@ pub mod fall {
             ```
             */
             n = (9 * n + 5) / 2;
+        }
+    }
+
+    /// Same as Omega, but faster than Omega when N is known to be odd, since it bypasses an if-statement.
+    pub fn omega_n_is_odd(mut n: u128) {
+        loop {
+            let m = 3 * n + 1;
+            if m.trailing_zeros() > 1 {
+                return;
+            }
+            n = m / 2;
         }
     }
 }
