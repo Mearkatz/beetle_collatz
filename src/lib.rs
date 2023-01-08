@@ -6,6 +6,12 @@ pub fn divide_while_even(n: u128) -> u128 {
     n >> n.trailing_zeros()
 }
 
+/// Same as divide_while_even, but also returns how many times the number was divided by 2 before becoming odd.
+pub fn divide_while_even_and_trailing_zeros(n: u128) -> (u128, u32) {
+    let zeros = n.trailing_zeros();    
+    (n >> zeros, zeros)
+}
+
 /// Contains functions that apply the rules of the collatz conjecture in more performant ways
 pub mod rules {
     /// Applies the rules of the collatz conjecture to a number N, and returns the result.
@@ -14,9 +20,12 @@ pub mod rules {
     /// All other functions in this module are faster than this one.
     /// Should only be used when benchmarking other functions in this module.
     pub fn basic(n: u128) -> u128 {
-        match n & 1 {
-            1 => 3 * n + 1, // ODD
-            _ => n / 2,     // EVEN
+        if n & 1 == 1 {
+            // N is ODD
+            3 * n + 1
+        } else {
+            // N is EVEN
+            n / 2
         }
     }
 
@@ -52,100 +61,59 @@ pub mod rules {
 /// If needed there are also versions of each function that return a boolean value if they succeed.
 pub mod fall {
     /// Applies the rules of the collatz conjecture until a number reaches one
-    /// This exists only to test how fast other functions are in comparison.    
+    /// This exists for benchmarking other faster functions' speed relative this one.
+    /// This aims to always be a correct implementation, but not very fast.
     /// Do not use if performance is important to you.
-    pub fn basic(mut n: u128) {
+    pub fn alpha(mut n: u128) {
         while n != 1 {
             n = crate::rules::basic(n);
         }
     }
 
-    /// Slightly faster than fall::basic, but not as fast as omega.    
-    /// Aims to always be correct, but not performant.
-    pub fn standard(mut n: u128, most: u128) {
-        while n > most {
-            n = crate::rules::halve_odds(n);
-        }
-    }
-
-    /// Aims to be the fastest function in the fall module.
-    /// May panic, cause overflows or other such nastiness until I've tested it more.
+    /// fall::alpha but MUCH FASTER.    
     pub fn omega(n: u128) {
         // If n is even, return immediately,
         // because the number will decrease,
         // which also means it will reach 1.
         if n & 1 == 1 {
-            omega_n_is_odd(n)
+            omega_n_is_odd(n);
         }
     }
 
-    /// Slightly faster than omega when N is odd
+    /// Same as Omega, but faster than Omega when N is known to be odd, since it bypasses an if-statement.
     pub fn omega_n_is_odd(mut n: u128) {
         loop {
-            // M is guaranteed to be even.
             let m = 3 * n + 1;
-
-            // divide be two until odd again
-            let o = crate::rules::trailing_zeros_num_is_even(m);
-
-            // If N is about to decrease, we know it reaches 1
-            if o < n {
+            if m.trailing_zeros() > 1 {
                 return;
             }
-            n = o;
+            n = m / 2;
         }
     }
 
-    /// Same as fall, but returns true if the input was > 0
-    pub fn standard_boolean(n: u128) -> bool {
-        match n {
-            0 => false,
-            _ => {
-                standard(n, n - 1);
-                true
+    /// fall::omega but -- slightly faster or slower, I'm not sure yet.
+    pub fn gamma(mut n: u128) {
+        loop {
+            let odd = n & 1 == 1;
+
+            // If N is even it decreases, thus it will reach 1.
+            if !odd {
+                return;
             }
-        }
-    }
 
-    /// Same as omega, but returns true after running omega(n).
-    /// This is for benchmarking the function using a blackbox
-    pub fn omega_boolean(n: u128) -> bool {
-        omega(n);
-        true
-    }
-
-    pub fn omega_boolean_n_is_odd(n: u128) -> bool {
-        omega_n_is_odd(n);
-        true
-    }
-
-    /// Even numbers always fall to 1.
-    /// This is because  they always immediately decrease in value
-    #[inline(always)]
-    pub fn omega_boolean_n_is_even(_n: u128) -> bool {
-        true
-    }
-
-    /// Aims to potentially be faster than omega. if it is, it should become the new omega.
-    pub fn zeta(mut n: u128) {
-        loop {    
-            // Even numbers decrease, so this will reach 1.
-            // Odd numbers that can be divided by 2 multiple times before being odd again decrease, therefore they will reach 1.
-            // if !odd || (odd && (next_if_odd.trailing_zeros() > 1)) {
-            //     return;
-            // }
-
-            if !((n & 1 == 1) ^ ((3 * n + 1).trailing_zeros() > 1)) {
+            // If N is odd, and has more than 2 trailing zeros, it is about to decrease, thus it will reach 1.
+            let next_n = 3 * n + 1;
+            if odd && (next_n.trailing_zeros() > 1) {
                 return;
             }
 
             /*
-            N is guaranteed to be ODD after (3n+1)/2-ing it
-            So we (3n+1) it again.
+            (SHOULD BE) Equivalent to the following:
+            ```rust
+                n = next_if_odd / 2;
+                n = 3 * n + 1;
+            ```
             */
-            //n = next_if_odd / 2;
-            //n = 3 * n + 1;
-            
             n = (9 * n + 5) / 2;
         }
     }
@@ -153,9 +121,11 @@ pub mod fall {
 
 /// Functions for counting how many steps a number takes to reach 1
 pub mod steps {
+    use crate::divide_while_even_and_trailing_zeros;
+
     /// Counts how many steps N takes to reach 1.
     /// Probably slower than other functions in this module.
-    pub fn basic(mut n: u128) -> u32 {
+    pub fn alpha(mut n: u128) -> u32 {
         let mut steps = 0;
         while n != 1 {
             if n & 1 == 1 {
@@ -169,19 +139,37 @@ pub mod steps {
     }
 
     /// Ideally far faster than steps::basic. Further testing needed.
-    pub fn omega(mut n: u128) -> u32 {
-        let mut steps = 0;
-        while n != 1 {
-            // See rules_super_speed for an explanation
-            let m = match n & 1 {
-                1 => 3 * n + 1,
-                _ => n,
-            };
-            let num_zeroes = m.trailing_zeros();
-            n = m / (1 << num_zeroes);
-            steps += num_zeroes;
+    pub fn omega(n: u128) -> u32 {
+        // let mut steps = 0;
+        // while n != 1 {
+        //     // See rules_super_speed for an explanation
+        //     let m = match n & 1 {
+        //         1 => 3 * n + 1,
+        //         _ => n,
+        //     };
+        //     let num_zeroes = m.trailing_zeros();
+        //     n = m / (1 << num_zeroes);
+        //     steps += num_zeroes;
+        // }
+        // steps
+
+        /*
+        Big brain:
+        If N is Even, simply make it odd!
+        */
+        if n & 1 != 1 {
+            omega_n_is_even(n)
         }
-        steps
+        else {
+            omega_n_is_odd(n)
+        }
+    }
+
+
+    // Makes N odd, then passes it to omega_n_is_odd
+    pub fn omega_n_is_even(n: u128) -> u32 {
+        let (n, steps) = divide_while_even_and_trailing_zeros(n);            
+        steps + omega_n_is_odd(n)
     }
 
     /// Same as steps::omega, but N is known to be odd, saving some computations
@@ -205,7 +193,7 @@ pub mod steps_range {
     /// Maps each number N in the range `nums` to its steps to reach 1 using steps::basic.
     /// Performance should be pretty good, but consider using steps_range::omega for better performance.
     pub fn basic(nums: Range<u128>) -> impl Iterator<Item = u32> {
-        nums.map(crate::steps::basic)
+        nums.map(crate::steps::alpha)
     }
 
     /// Ideally much faster than steps_range::basic, by use of steps::omega instea of steps::basic.
@@ -218,16 +206,22 @@ pub mod steps_range {
 
 /// For checking to see if ranges of numbers fall to 1
 pub mod check_range {
-    use std::ops::Range;
+    use std::{hint::black_box, ops::Range};
 
     /// Checks a range of numbers to ensure they all fall to 1.
     pub fn check_range_unoptimized(mut nums: Range<u128>) -> bool {
-        nums.all(crate::fall::standard_boolean)
+        nums.all(|x| {
+            crate::fall::alpha(x);
+            true
+        })
     }
 
     /// Same as check_range_unoptimized but uses fall::omega_boolean instead of fall::standard_boolean
     pub fn check_range_omega(mut nums: Range<u128>) -> bool {
-        nums.all(crate::fall::omega_boolean)
+        nums.all(|x| {
+            crate::fall::omega(x);
+            true
+        })
     }
 
     /// Same as check_range_omega, but takes advantage of knowing all the numbers in the range are odd first
@@ -235,9 +229,11 @@ pub mod check_range {
         assert!(start % 2 != 0); // start must be odd, since it's the first number we check
         assert!(step % 2 == 0); // step must be even
 
-        (start..end)
-            .step_by(step)
-            .all(crate::fall::omega_boolean_n_is_odd)
+        (start..end).step_by(step).all(|x| {
+            crate::fall::omega_n_is_odd(x);
+            black_box(());
+            true
+        })
     }
 }
 
