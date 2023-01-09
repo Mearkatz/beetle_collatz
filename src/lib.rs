@@ -177,7 +177,7 @@ pub mod steps {
             let m = 3 * n + 1;
             let zeros = m.trailing_zeros();
             n = m >> zeros;
-            steps += zeros + 1;
+            steps += zeros;
         }
         steps
     }
