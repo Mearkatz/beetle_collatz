@@ -136,30 +136,30 @@ pub mod steps {
     }
 
     /// Ideally far faster than steps::basic. Further testing needed.
-    pub fn omega(n: u128) -> u32 {
-        // let mut steps = 0;
-        // while n != 1 {
-        //     // See rules_super_speed for an explanation
-        //     let m = match n & 1 {
-        //         1 => 3 * n + 1,
-        //         _ => n,
-        //     };
-        //     let num_zeroes = m.trailing_zeros();
-        //     n = m / (1 << num_zeroes);
-        //     steps += num_zeroes;
-        // }
-        // steps
+    pub fn omega(mut n: u128) -> u32 {
+        let mut steps = 0;
+        while n != 1 {
+            // See rules_super_speed for an explanation
+            let m = match n & 1 {
+                1 => 3 * n + 1,
+                _ => n,
+            };
+            let num_zeroes = m.trailing_zeros();
+            n = m / (1 << num_zeroes);
+            steps += num_zeroes;
+        }
+        steps
 
         /*
         Big brain:
         If N is Even, simply make it odd!
         */
-        if n & 1 != 1 {
-            omega_n_is_even(n)
-        }
-        else {
-            omega_n_is_odd(n)
-        }
+        // if n & 1 != 1 {
+        //     omega_n_is_even(n)
+        // }
+        // else {
+        //     omega_n_is_odd(n)
+        // }
     }
 
 
