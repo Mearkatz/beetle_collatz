@@ -1,31 +1,46 @@
 //! A collection of functions relating to the Collatz conjecture
 
+use std::num::NonZeroU128;
+
 /// This has the effect of dividing a number by 2 until it is odd.
 /// Odd numbers are simply returned.
-pub fn divide_while_even(n: u128) -> u128 {
-    match n {
-        0 => panic!("0 >> 0.trailing_zeros() always panics"),
-        _ => n >> n.trailing_zeros(),
-    }
+pub fn divide_while_even(n: NonZeroU128) -> u128 {
+    let m: u128 = n.into();
+    m >> m.trailing_zeros()
 }
 
 /// Same as divide_while_even, but also returns how many times the number was divided by 2 before becoming odd.
-pub fn divide_while_even_and_trailing_zeros(n: u128) -> (u128, u32) {
-    if n == 0 {
-        panic!("0 >> 0.trailing_zeros() always panics");
-    }
+pub fn divide_while_even_and_trailing_zeros(n: NonZeroU128) -> (u128, u32) {
     let zeros = n.trailing_zeros();    
-    (n >> zeros, zeros)
+    let m: u128 = n.into();
+    (m >> zeros, zeros)
 }
+
+/// Returns all the numbers N becomes on its way to falling to one.
+pub fn transformations(n: NonZeroU128) -> Vec<u128> {
+    let mut n: u128 = n.into();
+    let mut trans: Vec<u128> = vec![n];
+    while n != 1 {
+        n = rules::basic(n.try_into().unwrap());
+        trans.push(n);
+    }
+
+    trans
+}
+
+
 
 /// Contains functions that apply the rules of the collatz conjecture in more performant ways
 pub mod rules {
+    use std::num::NonZeroU128;
+
     /// Applies the rules of the collatz conjecture to a number N, and returns the result.
     /// If N is ODD: returns 3n + 1,
     /// If N is EVEN: returns n / 2.
     /// All other functions in this module are faster than this one.
     /// Should only be used when benchmarking other functions in this module.
-    pub fn basic(n: u128) -> u128 {
+    pub fn basic(n: NonZeroU128) -> u128 {
+        let n: u128 = n.into();
         if n & 1 == 1 {
             // N is ODD
             3 * n + 1
@@ -39,7 +54,8 @@ pub mod rules {
     // except if N is odd, it also divides it by 2 before returning it.
     // for use with the `fall` function
     /// Do not use if the precise number of steps needed to reach 1 is important.
-    pub fn halve_odds(n: u128) -> u128 {
+    pub fn halve_odds(n: NonZeroU128) -> u128 {
+        let n: u128 = n.into();
         match n & 1 {
             1 => (3 * n + 1) / 2, // ODD
             _ => n / 2,           // EVEN
@@ -47,17 +63,20 @@ pub mod rules {
     }
 
     /// In theory faster than halve_odds, in practice, seems about the same.    
-    pub fn trailing_zeros(n: u128) -> u128 {
-        crate::divide_while_even(basic(n))
+    pub fn trailing_zeros(n: NonZeroU128) -> u128 {
+        let next_n = basic(n);
+        next_n >> next_n.trailing_zeros()
     }
 
     /// same as rules::trailing_zeros, but we know for sure that N is ODD.
-    pub fn trailing_zeros_num_is_odd(n: u128) -> u128 {
-        crate::divide_while_even(3 * n + 1)
+    pub fn trailing_zeros_num_is_odd(n: NonZeroU128) -> u128 {
+        let m: u128 = (Into::<u128>::into(n) * 3) + 1;
+        let m: NonZeroU128 = m.try_into().unwrap(); // will always succeed
+        crate::divide_while_even(m)
     }
 
     /// same as rules::trailing_zeros, but we know for sure that N is EVEN
-    pub fn trailing_zeros_num_is_even(n: u128) -> u128 {
+    pub fn trailing_zeros_num_is_even(n: NonZeroU128) -> u128 {
         crate::divide_while_even(n)
     }
 }
@@ -66,25 +85,21 @@ pub mod rules {
 /// Functions herein with no return value are meant for benchmarking -- and because return values aren't strictly necessary.
 /// If needed there are also versions of each function that return a boolean value if they succeed.
 pub mod fall {
+    use std::num::NonZeroU128;
+
     /// Applies the rules of the collatz conjecture until a number reaches one
     /// This exists for benchmarking other faster functions' speed relative this one.
     /// This aims to always be a correct implementation, but not very fast.
     /// Do not use if performance is important to you.
-    pub fn alpha(mut n: u128) {
-        while n != 1 {
-            n = crate::rules::basic(n);
+    pub fn alpha(mut n: NonZeroU128) {
+        while n != NonZeroU128::new(1).unwrap() {
+            n = crate::rules::basic(n).try_into().unwrap();
         }
     }
 
     /// fall::alpha but MUCH FASTER.    
-    pub fn omega(mut n: u128) {
-        // If n is even, return immediately,
-        // because the number will decrease,
-        // which also means it will reach 1.
-        // if n & 1 == 1 {
-        //     omega_n_is_odd(n);
-        // }
-        
+    pub fn omega(n: NonZeroU128) {
+        let mut n: u128 = n.into();
         loop {
             let odd = n & 1 == 1;
 
@@ -111,7 +126,8 @@ pub mod fall {
     }
 
     /// Same as Omega, but faster than Omega when N is known to be odd, since it bypasses an if-statement.
-    pub fn omega_n_is_odd(mut n: u128) {
+    pub fn omega_n_is_odd(n: NonZeroU128) {
+        let mut n: u128 = n.into();
         loop {
             let m = 3 * n + 1;
             if m.trailing_zeros() > 1 {
@@ -124,12 +140,14 @@ pub mod fall {
 
 /// Functions for counting how many steps a number takes to reach 1
 pub mod steps {
+    use std::num::NonZeroU128;
     use crate::divide_while_even_and_trailing_zeros;
 
     /// Counts how many steps N takes to reach 1.
     /// Probably slower than other functions in this module.
-    pub fn alpha(mut n: u128) -> u32 {
+    pub fn alpha(n: NonZeroU128) -> u32 {
         let mut steps = 0;
+        let mut n: u128 = n.into();
         while n != 1 {
             if n & 1 == 1 {
                 n = 3 * n + 1;
@@ -142,12 +160,12 @@ pub mod steps {
     }
 
     /// Ideally far faster than steps::basic. Further testing needed.
-    pub fn omega(n: u128) -> u32 {
+    pub fn omega(n: NonZeroU128) -> u32 {
         /*
         Big brain:
         If N is Even, simply make it odd!
         */
-        if n & 1 != 1 {
+        if Into::<u128>::into(n) & 1 != 1 {
             omega_n_is_even(n)
         }
         else {
@@ -157,14 +175,15 @@ pub mod steps {
 
 
     // Makes N odd, then passes it to omega_n_is_odd
-    pub fn omega_n_is_even(n: u128) -> u32 {
+    pub fn omega_n_is_even(n: NonZeroU128) -> u32 {
         let (n, steps) = divide_while_even_and_trailing_zeros(n);            
-        steps + omega_n_is_odd(n)
+        steps + omega_n_is_odd(n.try_into().unwrap())
     }
 
     /// Same as steps::omega, but N is known to be odd, saving some computations
-    pub fn omega_n_is_odd(mut n: u128) -> u32 {
+    pub fn omega_n_is_odd(n: NonZeroU128) -> u32 {
         let mut steps = 0;
+        let mut n: u128 = n.into();
         while n != 1 {
             // See rules_super_speed for an explanation
             let m = 3 * n + 1;
@@ -178,49 +197,65 @@ pub mod steps {
 
 /// Functions for mapping integers to the number of steps they take to reach 1.
 pub mod steps_range {
-    use std::ops::Range;
+    use std::num::NonZeroU128;
 
     /// Maps each number N in the range `nums` to its steps to reach 1 using steps::basic.
     /// Performance should be pretty good, but consider using steps_range::omega for better performance.
-    pub fn basic(nums: Range<u128>) -> impl Iterator<Item = u32> {
-        nums.map(crate::steps::alpha)
+    pub fn basic(start: NonZeroU128, end: NonZeroU128) -> impl Iterator<Item = u32> {
+        let start: u128 = start.into();
+        let end: u128 = end.into();
+        (start..end)
+        .map(|n| crate::steps::alpha(n.try_into().unwrap()))
     }
 
     /// Ideally much faster than steps_range::basic, by use of steps::omega instea of steps::basic.
     ///
     /// Potentially less stable as a result, and may panic or overflow more often, I'm not sure yet.
-    pub fn omega(nums: Range<u128>) -> impl Iterator<Item = u32> {
-        nums.map(crate::steps::omega)
+    pub fn omega(start: NonZeroU128, end: NonZeroU128) -> impl Iterator<Item = u32> {
+        let start: u128 = start.into();
+        let end: u128 = end.into();
+        (start..end).map(|n| crate::steps::omega(n.try_into().unwrap()))
     }
 }
 
 /// For checking to see if ranges of numbers fall to 1
 pub mod check_range {
-    use std::{hint::black_box, ops::Range};
+    use std::{hint::black_box, num::{NonZeroU128, NonZeroUsize}};
 
     /// Checks a range of numbers to ensure they all fall to 1.
-    pub fn check_range_unoptimized(mut nums: Range<u128>) -> bool {
+    pub fn check_range_unoptimized(start: NonZeroU128, end: NonZeroU128) -> bool {
+        let start: u128 = start.into();
+        let end: u128 = end.into();
+        let mut nums = start..end;
+
         nums.all(|x| {
-            crate::fall::alpha(x);
+            crate::fall::alpha(x.try_into().unwrap());
             true
         })
     }
 
     /// Same as check_range_unoptimized but uses fall::omega_boolean instead of fall::standard_boolean
-    pub fn check_range_omega(mut nums: Range<u128>) -> bool {
+    pub fn check_range_omega(start: NonZeroU128, end: NonZeroU128) -> bool {
+        let start: u128 = start.into();
+        let end: u128 = end.into();
+        let mut nums = start..end;
         nums.all(|x| {
-            crate::fall::omega(x);
+            crate::fall::omega(x.try_into().unwrap());
             true
         })
     }
 
     /// Same as check_range_omega, but takes advantage of knowing all the numbers in the range are odd first
-    pub fn check_range_omega_all_odds(start: u128, end: u128, step: usize) -> bool {
-        assert!(start % 2 != 0); // start must be odd, since it's the first number we check
-        assert!(step % 2 == 0); // step must be even
+    pub fn check_range_omega_all_odds(start: NonZeroU128, end: NonZeroU128, step: NonZeroUsize) -> bool {
+        let start: u128 = start.into();
+        let end: u128 = end.into();
+        let step: usize = step.into();
+
+        assert_eq!(step & 1, 1);
+        assert!(start < end);
 
         (start..end).step_by(step).all(|x| {
-            crate::fall::omega_n_is_odd(x);
+            crate::fall::omega_n_is_odd(x.try_into().unwrap());
             black_box(());
             true
         })
@@ -229,17 +264,21 @@ pub mod check_range {
 
 /// Functions for finding numbers who take the most steps to reach 1, given the rules.
 pub mod bouncy_numbers {
+    use std::num::NonZeroU128;
+
 
     /// Finds a number N that takes the most steps S to reach 1 in a given range
     /// Returns (N, S)
     /// Note: the range provided must be ascending
-    pub fn basic(start: u128, end: u128) -> (u128, u32) {
+    pub fn basic(start: NonZeroU128, end: NonZeroU128) -> (u128, u32) {
         let mut record_number: u128 = 0;
-        let mut record_steps: u32 = 0;
-        assert!((start > 0) && (start < end)); // preventing weirdness
+        let mut record_steps: u32 = 0;        
+
+        let start: u128 = start.into();
+        let end: u128 = end.into();
 
         for i in start..end {
-            let steps = crate::steps::omega(i);
+            let steps = crate::steps::omega(i.try_into().unwrap());
             if record_steps < steps {
                 record_number = i;
                 record_steps = steps;
@@ -249,11 +288,12 @@ pub mod bouncy_numbers {
     }
 
     /// Same as `bouncy_numbers::basic`, but ideally faster
-    pub fn optimized(start: u128, end: u128) -> (u128, u32) {
-        assert!((start > 0) && (start < end)); // preventing weirdness
+    pub fn optimized(start: NonZeroU128, end: NonZeroU128) -> (u128, u32) {
+        let start: u128 = start.into();
+        let end: u128 = end.into();
 
         (start..end)
-            .map(|n| (n, crate::steps::omega(n)))
+            .map(|n| (n, crate::steps::omega(n.try_into().unwrap())))
             .reduce(|(num1, steps1), (num2, steps2)| {
                 if steps2 > steps1 {
                     (num2, steps2)
@@ -266,11 +306,14 @@ pub mod bouncy_numbers {
 
     /// Finds every number N, which takes more steps to reach 1 than all numbers before it.
     /// Returns this as a sequence starting at START, and ending at END, with every number N paired with its corresponding number of steps S
-    pub fn calculate_bouncy_sequence(start: u128, end: u128) -> Vec<(u128, u32)> {
+    pub fn calculate_bouncy_sequence(start: NonZeroU128, end: NonZeroU128) -> Vec<(u128, u32)> {
         let mut retval = vec![];
         let mut record_steps = 0;
+        let start: u128 = start.into();
+        let end: u128 = end.into();
+
         for n in start..end {
-            let steps = crate::steps::omega(n);
+            let steps = crate::steps::omega(n.try_into().unwrap());
             if steps > record_steps {
                 record_steps = steps;
                 retval.push((n, steps));
@@ -279,6 +322,8 @@ pub mod bouncy_numbers {
         retval
     }
 }
+
+
 
 
 
@@ -300,7 +345,7 @@ mod tests {
 
         let r = 1..(oeis_steps.len() + 1);
 
-        let step_counts: Vec<u32> = r.clone().map(|n| steps::omega(n.try_into().unwrap())).collect();
+        let step_counts: Vec<u32> = r.clone().map(|n| -> u128 {n.try_into().unwrap()}).map(|n| steps::omega(n.try_into().unwrap())).collect();
 
         println!("STEP COUNTS HAS LENGTH {}", step_counts.len());
 
