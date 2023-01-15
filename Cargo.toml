@@ -1,6 +1,6 @@
 [package]
 name = "beetle-collatz"
-version = "0.3.1"
+version = "0.3.2"
 edition = "2021"
 authors = ["beetle"]
 description = "A collection of functions relating to the Collatz conjecture"
@@ -12,5 +12,6 @@ license = "MIT"
 rayon = {version = "1.6.1", optional = true}
 
 [features]
+default = []
 threaded = ["dep:rayon"]
 

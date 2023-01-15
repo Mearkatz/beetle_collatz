@@ -44,7 +44,7 @@ pub fn omega_all_odds(start: NonZeroU128, end: NonZeroU128, step: NonZeroUsize) 
 }
 
 /// Multi-threaded version of check_range::alpha
-#[cfg(features = "threaded")]
+#[cfg(feature = "threaded")]
 pub fn alpha_threaded(nums: Range<u128>) -> bool {
     use rayon::prelude::{IntoParallelIterator, ParallelIterator};
     nums.into_par_iter().all(|n| {
@@ -54,7 +54,7 @@ pub fn alpha_threaded(nums: Range<u128>) -> bool {
 }
 
 /// Multi-threaded version of check_range::omega
-#[cfg(features = "threaded")]
+#[cfg(feature = "threaded")]
 pub fn omega_threaded(nums: Range<u128>) -> bool {
     use rayon::prelude::{IntoParallelIterator, ParallelIterator};
     nums.into_par_iter().all(|n| {
