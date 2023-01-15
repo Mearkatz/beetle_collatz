@@ -4,9 +4,9 @@ use std::num::NonZeroU128;
 /// Finds a number N that takes the most steps S to reach 1 in a given range
 /// Returns (N, S)
 /// Note: the range provided must be ascending
-pub fn basic(start: NonZeroU128, end: NonZeroU128) -> (u128, u32) {
+pub fn alpha(start: NonZeroU128, end: NonZeroU128) -> (u128, u32) {
     let mut record_number: u128 = 0;
-    let mut record_steps: u32 = 0; 
+    let mut record_steps: u32 = 0;
 
     let start: u128 = start.into();
     let end: u128 = end.into();
@@ -22,7 +22,7 @@ pub fn basic(start: NonZeroU128, end: NonZeroU128) -> (u128, u32) {
 }
 
 /// Same as `bouncy_numbers::basic`, but ideally faster
-pub fn optimized(start: NonZeroU128, end: NonZeroU128) -> (u128, u32) {
+pub fn omega(start: NonZeroU128, end: NonZeroU128) -> (u128, u32) {
     let start: u128 = start.into();
     let end: u128 = end.into();
 
@@ -36,6 +36,30 @@ pub fn optimized(start: NonZeroU128, end: NonZeroU128) -> (u128, u32) {
             }
         })
         .unwrap()
+}
+
+/// Finds a number N that takes the most steps S to reach 1 in a given range
+/// Returns (N, S)
+/// Note: the range provided must be ascending
+/// /// Same as `beetle_collatz::bouncy_numbers::optimized`, but is multi-threaded and probably way faster
+#[cfg(feature = "threaded")]
+pub fn omega_multithreaded(start: u128, end: u128) -> (u128, u32) {
+    use rayon::prelude::{IntoParallelIterator, ParallelIterator};
+    assert!((start > 0) && (start < end)); // preventing weirdness
+
+    (start..end)
+        .into_par_iter()
+        .map(|n| (n, beetle_collatz::steps::omega(n.try_into().unwrap())))
+        .reduce(
+            || (0_u128, 0_u32),
+            |(a, a_steps), (b, b_steps)| -> (u128, u32) {
+                if a_steps > b_steps {
+                    (a, a_steps)
+                } else {
+                    (b, b_steps)
+                }
+            },
+        )
 }
 
 /// Finds every number N, which takes more steps to reach 1 than all numbers before it.
