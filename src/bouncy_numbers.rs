@@ -49,7 +49,7 @@ pub fn omega_multithreaded(start: u128, end: u128) -> (u128, u32) {
 
     (start..end)
         .into_par_iter()
-        .map(|n| (n, beetle_collatz::steps::omega(n.try_into().unwrap())))
+        .map(|n| (n, crate::steps::omega(n.try_into().unwrap())))
         .reduce(
             || (0_u128, 0_u32),
             |(a, a_steps), (b, b_steps)| -> (u128, u32) {
