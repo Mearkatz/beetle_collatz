@@ -45,6 +45,9 @@ pub fn omega(start: NonZeroU128, end: NonZeroU128) -> (u128, u32) {
 #[cfg(feature = "threaded")]
 pub fn omega_threaded(start: NonZeroU128, end: NonZeroU128) -> (u128, u32) {
     use rayon::prelude::{IntoParallelIterator, ParallelIterator};
+    let start: u128 = start.into();
+    let end: u128 = end.into();
+    
     // preventing weirdness
     if start >= end {
         panic!("bouncy_numbers::omega_threaded expects `start` to be less than `end`");
