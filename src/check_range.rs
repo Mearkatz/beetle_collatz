@@ -45,9 +45,12 @@ pub fn omega_all_odds(start: NonZeroU128, end: NonZeroU128, step: NonZeroUsize) 
 
 /// Multi-threaded version of check_range::alpha
 #[cfg(feature = "threaded")]
-pub fn alpha_threaded(nums: Range<u128>) -> bool {
+pub fn alpha_threaded(start: NonZeroU128, end: NonZeroU128) -> bool {
+    let start: u128 = start.into();
+    let end: u128 = end.into();
+
     use rayon::prelude::{IntoParallelIterator, ParallelIterator};
-    nums.into_par_iter().all(|n| {
+    (start..end).into_par_iter().all(|n| {
         crate::fall::alpha(n.try_into().unwrap());
         true
     })
@@ -55,9 +58,11 @@ pub fn alpha_threaded(nums: Range<u128>) -> bool {
 
 /// Multi-threaded version of check_range::omega
 #[cfg(feature = "threaded")]
-pub fn omega_threaded(nums: Range<u128>) -> bool {
+pub fn omega_threaded(start: NonZeroU128, end: NonZeroU128) -> bool {
+    let start: u128 = start.into();
+    let end: u128 = end.into();
     use rayon::prelude::{IntoParallelIterator, ParallelIterator};
-    nums.into_par_iter().all(|n| {
+    (start..end).into_par_iter().all(|n| {
         crate::fall::omega(n.try_into().unwrap());
         true
     })
