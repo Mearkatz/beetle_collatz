@@ -43,9 +43,12 @@ pub fn omega(start: NonZeroU128, end: NonZeroU128) -> (u128, u32) {
 /// Note: the range provided must be ascending
 /// /// Same as `beetle_collatz::bouncy_numbers::optimized`, but is multi-threaded and probably way faster
 #[cfg(feature = "threaded")]
-pub fn omega_multithreaded(start: u128, end: u128) -> (u128, u32) {
+pub fn omega_threaded(start: NonZeroU128, end: NonZeroU128) -> (u128, u32) {
     use rayon::prelude::{IntoParallelIterator, ParallelIterator};
-    assert!((start > 0) && (start < end)); // preventing weirdness
+    // preventing weirdness
+    if start >= end {
+        panic!("bouncy_numbers::omega_threaded expects `start` to be less than `end`");
+    } 
 
     (start..end)
         .into_par_iter()
