@@ -37,7 +37,7 @@ pub fn omega_all_odds(start: NonZeroU128, end: NonZeroU128, step: NonZeroUsize) 
     assert!(start < end);
 
     (start..end).step_by(step).all(|x| {
-        crate::fall::omega_n_is_odd(x.try_into().unwrap());
+        crate::fall::omega_n_is_odd(x);
         black_box(());
         true
     })
