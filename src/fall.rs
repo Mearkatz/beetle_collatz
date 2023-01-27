@@ -12,42 +12,22 @@ pub fn alpha(mut n: NonZeroU128) {
     }
 }
 
-/// fall::alpha but MUCH FASTER.    
-pub fn omega(n: NonZeroU128) {
-    let mut n: u128 = n.into();
-    loop {
-        let odd = n & 1 == 1;
+/// fall::alpha but MUCH FASTER.  
+pub fn omega(start: NonZeroU128) {
+    let start: u128 = start.into();
+    let mut n = start;    
 
-        // If N is even it decreases, thus it will reach 1.
-        if !odd {
-            return;
-        }
-
-        // If N is odd, and has more than 2 trailing zeros, it is about to decrease, thus it will reach 1.
-        let next_n = 3 * n + 1;
-        if odd && (next_n.trailing_zeros() > 1) {
-            return;
-        }
-
-        /*
-        (SHOULD BE) Equivalent to the following:
-        ```rust
-            n = next_if_odd / 2;
-            n = 3 * n + 1;
-        ```
-        */
-        n = (9 * n + 5) / 2;
+    if n & 1 != 1 {
+        n >>= n.trailing_zeros();
     }
+    omega_n_is_odd(n)
 }
 
 /// Same as Omega, but faster than Omega when N is known to be odd, since it bypasses an if-statement.
-pub fn omega_n_is_odd(n: NonZeroU128) {
-    let mut n: u128 = n.into();
-    loop {
-        let m = 3 * n + 1;
-        if m.trailing_zeros() > 1 {
-            return;
-        }
-        n = m / 2;
+pub fn omega_n_is_odd(start: u128) {
+    let mut n = start;
+    while n >= start {
+        n = 3 * n + 1;
+        n >>= n.trailing_zeros();
     }
 }
