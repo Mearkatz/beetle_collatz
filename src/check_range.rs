@@ -20,11 +20,10 @@ pub fn alpha(start: NonZeroU128, end: NonZeroU128) -> bool {
 pub fn omega(start: NonZeroU128, end: NonZeroU128) -> bool {
     let start: u128 = start.into();
     let end: u128 = end.into();
-    let mut nums = start..end;
-    nums.all(|x| {
-        crate::fall::omega(x.try_into().unwrap());
-        true
-    })
+    (start..end).for_each(|x| {
+        crate::fall::omega_checked_lesser_numbers(x.try_into().unwrap());
+    });
+    true
 }
 
 /// Same as check_range_omega, but takes advantage of knowing all the numbers in the range are odd first
@@ -36,11 +35,11 @@ pub fn omega_all_odds(start: NonZeroU128, end: NonZeroU128, step: NonZeroUsize) 
     assert_eq!(step & 1, 1);
     assert!(start < end);
 
-    (start..end).step_by(step).all(|x| {
+    (start..end).step_by(step).for_each(|x| {
         crate::fall::omega_n_is_odd(x);
-        black_box(());
-        true
-    })
+        black_box(());        
+    });
+    true
 }
 
 /// Multi-threaded version of check_range::alpha

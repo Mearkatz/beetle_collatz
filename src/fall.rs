@@ -12,15 +12,29 @@ pub fn alpha(mut n: NonZeroU128) {
     }
 }
 
-/// fall::alpha but MUCH FASTER.  
+/// fall::alpha but MUCH FASTER.
+/// Assumes you've not checked all numbers < START
 pub fn omega(start: NonZeroU128) {
     let start: u128 = start.into();
-    let mut n = start;    
-
-    if n & 1 != 1 {
-        n >>= n.trailing_zeros();
+    let mut n = start;
+    while n != 1 {
+        if n & 1 == 1 {
+            n = 3 * n + 1;
+        }
+        n /= 2;
     }
-    omega_n_is_odd(n)
+}
+
+/// fall::omega (but faster in the case that you've checked all numbers < START)
+pub fn omega_checked_lesser_numbers(start: NonZeroU128) {
+    let start: u128 = start.into();
+    let mut n: u128 = start;
+    while n > start {
+        if n & 1 == 1 {
+            n = 3 * n + 1;
+        }
+        n /= 2;
+    }
 }
 
 /// Same as Omega, but faster than Omega when N is known to be odd, since it bypasses an if-statement.

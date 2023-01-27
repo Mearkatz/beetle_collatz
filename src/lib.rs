@@ -30,15 +30,12 @@ pub fn transformations(n: NonZeroU128) -> Vec<u128> {
     trans
 }
 
+pub mod bouncy_numbers;
+pub mod check_range;
 pub mod fall;
 pub mod rules;
-pub mod check_range;
 pub mod steps;
 pub mod steps_range;
-pub mod bouncy_numbers;
-
-
-
 
 mod tests {
 
