@@ -17,11 +17,9 @@ pub fn alpha(mut n: NonZeroU128) {
 pub fn omega(start: NonZeroU128) {
     let start: u128 = start.into();
     let mut n = start;
-    while n != 1 {
-        if n & 1 == 1 {
-            n = 3 * n + 1;
-        }
-        n /= 2;
+    while n >= start {
+        n >>= n.trailing_zeros();
+        n = 3 * n + 1;
     }
 }
 
@@ -30,18 +28,7 @@ pub fn omega_checked_lesser_numbers(start: NonZeroU128) {
     let start: u128 = start.into();
     let mut n: u128 = start;
     while n > start {
-        if n & 1 == 1 {
-            n = 3 * n + 1;
-        }
-        n /= 2;
-    }
-}
-
-/// Same as Omega, but faster than Omega when N is known to be odd, since it bypasses an if-statement.
-pub fn omega_n_is_odd(start: u128) {
-    let mut n = start;
-    while n >= start {
-        n = 3 * n + 1;
         n >>= n.trailing_zeros();
+        n = 3 * n + 1;
     }
 }
