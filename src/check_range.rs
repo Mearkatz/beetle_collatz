@@ -61,8 +61,11 @@ pub fn omega_threaded(start: NonZeroU128, end: NonZeroU128) -> bool {
     let start: u128 = start.into();
     let end: u128 = end.into();
     use rayon::prelude::{IntoParallelIterator, ParallelIterator};
-    (start..end).into_par_iter().all(|n| {
-        crate::fall::omega(n.try_into().unwrap());
-        true
-    })
+    
+    (start..end)
+    .into_par_iter()
+    .for_each(|n| {
+        crate::fall::omega(n.try_into().unwrap())
+    });
+    true
 }
