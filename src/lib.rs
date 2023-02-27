@@ -2,25 +2,54 @@
 
 #![deny(missing_docs)]
 
-use std::num::NonZeroU128;
+use std::{fmt::{Debug, Display}, num::NonZeroU128};
+
+use color_eyre::eyre::{self, eyre};
+
+use num::{Integer, Unsigned, PrimInt};
+use no_panic::no_panic;
+
+/// Types implementing this can be passed to the most if not all functions in this library
+pub trait Collatz: Unsigned + Integer + PrimInt + Debug + Display {}
+
+impl<T> Collatz for T
+where T: Unsigned + Integer + PrimInt + Debug + Display {}
+
+
+struct NonZero<T: Collatz>(T);
+
+impl<T: Collatz> NonZero<T> {
+    fn try_new(n: T) -> Option<Self> {
+        if n.is_zero() {None} else {Some(Self(n))}
+    }
+
+    fn into(self) -> T {
+        self.0
+    }
+}
+
 
 /// This has the effect of dividing a number by 2 until it is odd.
 /// Odd numbers are simply returned.
-pub fn divide_while_even(n: NonZeroU128) -> u128 {
-    let m: u128 = n.into();
-    m >> m.trailing_zeros()
+#[no_panic]
+pub fn divide_while_even<T: Collatz>(n: NonZero<T>) -> eyre::Result<T> {
+    let n = n.into();
+    let odd = n >> n.trailing_zeros().try_into()?;
+    Ok(odd)
 }
 
 /// Same as divide_while_even, but also returns how many times the number was divided by 2 before becoming odd.
-pub fn divide_while_even_and_trailing_zeros(n: NonZeroU128) -> (u128, u32) {
-    let zeros = n.trailing_zeros();
-    let m: u128 = n.into();
-    (m >> zeros, zeros)
+#[no_panic]
+pub fn divide_while_even_and_trailing_zeros<T: Collatz>(n: NonZero<T>) -> eyre::Result<(T, usize)> {
+    let n = n.into();
+    let trailing_zeros: usize = n.trailing_zeros().try_into()?;
+    let odd = n >> trailing_zeros;
+    Ok((odd, trailing_zeros))
 }
 
 /// Returns all the numbers N becomes on its way to falling to one.
-pub fn transformations(n: NonZeroU128) -> Vec<u128> {
-    let mut n: u128 = n.into();
+pub fn transformations<T: Collatz>(n: NonZero<T>) -> Vec<T> {
+    let mut n = n.into();
     let mut trans: Vec<u128> = vec![n];
     while n != 1 {
         n = rules::basic(n.try_into().unwrap());

@@ -2,11 +2,13 @@
 
 use std::num::NonZeroU128;
 
-/// Applies the rules of the collatz conjecture to a number N, and returns the result.
-/// If N is ODD: returns 3n + 1,
-/// If N is EVEN: returns n / 2.
-/// All other functions in this module are faster than this one.
-/// Should only be used when benchmarking other functions in this module.
+/**
+Applies the rules of the collatz conjecture to a number N, and returns the result.
+If N is ODD: returns 3n + 1,
+If N is EVEN: returns n / 2.
+All other functions in this module are faster than this one.
+Should only be used when benchmarking other functions in this module.
+*/
 pub fn basic(n: NonZeroU128) -> u128 {
     let n: u128 = n.into();
     if n & 1 == 1 {

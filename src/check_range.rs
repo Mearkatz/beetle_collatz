@@ -20,6 +20,12 @@ pub fn alpha(start: NonZeroU128, end: NonZeroU128) -> bool {
 pub fn omega(start: NonZeroU128, end: NonZeroU128) -> bool {
     let start: u128 = start.into();
     let end: u128 = end.into();
+
+    let start = if start < 5 {5} else {start};
+    
+    let start = start.min(end);
+    let end = start.max(end);
+
     (start..end).for_each(|x| {
         crate::fall::omega_checked_lesser_numbers(x.try_into().unwrap());
     });
@@ -60,6 +66,9 @@ pub fn alpha_threaded(start: NonZeroU128, end: NonZeroU128) -> bool {
 pub fn omega_threaded(start: NonZeroU128, end: NonZeroU128) -> bool {
     let start: u128 = start.into();
     let end: u128 = end.into();
+
+    let start = if start < 5 {5} else {start};
+
     use rayon::prelude::{IntoParallelIterator, ParallelIterator};
     
     (start..end)
