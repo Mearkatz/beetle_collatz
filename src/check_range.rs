@@ -1,80 +1,89 @@
 //! For checking to see if ranges of numbers fall to 1
-use std::{
-    hint::black_box,
-    num::{NonZeroU128, NonZeroUsize},
-};
+
+use crate::{Collatz, NonZero};
+use std::hint::black_box;
+
+// trait PrimitiveUnsignedInteger {}
+// impl PrimitiveUnsignedInteger for u8 {}
+// impl PrimitiveUnsignedInteger for u16 {}
+// impl PrimitiveUnsignedInteger for u32 {}
+// impl PrimitiveUnsignedInteger for u64 {}
+// impl PrimitiveUnsignedInteger for u128 {}
+
+// /// Marks all primitive unsigned integers for use in parallel-ized stuff.
+// /// Mainly for use with the parallel iterators of the rayon crate
+// trait CollatzParallel: PrimitiveUnsignedInteger + Collatz {}
+// impl<T> CollatzParallel for T where T: PrimitiveUnsignedInteger + Collatz {}
+
+// struct RangeNonZeroUnsignedIntegers<T: CollatzParallel> {
+//     start: NonZero<T>,
+//     stop: NonZero<T>,
+// }
+
+// impl<T: CollatzParallel> RangeNonZeroUnsignedIntegers<T> {
+//     fn new(start: NonZero<T>, stop: NonZero<T>) -> Self {
+//         Self { start, stop }
+//     }
+
+//     fn to_range(self) -> Range<T> {
+//         let (start, stop) = (self.start.0, self.stop.0);
+//         range(start, stop)
+//     }
+// }
 
 /// Checks a range of numbers to ensure they all fall to 1.
-pub fn alpha(start: NonZeroU128, end: NonZeroU128) -> bool {
-    let start: u128 = start.into();
-    let end: u128 = end.into();
-    let mut nums = start..end;
-
-    nums.all(|x| {
-        crate::fall::alpha(x.try_into().unwrap());
-        true
-    })
+pub fn alpha<T: Collatz>(start: NonZero<T>, stop: NonZero<T>) -> bool {
+    let (start, stop) = (start.0, stop.0);
+    for i in num::iter::range(start, stop) {
+        crate::fall::alpha(NonZero(i));
+    }
+    true
 }
 
 /// Same as check_range_unoptimized but uses fall::omega_boolean instead of fall::standard_boolean
-pub fn omega(start: NonZeroU128, end: NonZeroU128) -> bool {
-    let start: u128 = start.into();
-    let end: u128 = end.into();
-
-    let start = if start < 5 {5} else {start};
-    
-    let start = start.min(end);
-    let end = start.max(end);
-
-    (start..end).for_each(|x| {
-        crate::fall::omega_checked_lesser_numbers(x.try_into().unwrap());
-    });
+pub fn omega<T: Collatz>(start: NonZero<T>, stop: NonZero<T>) -> bool {
+    let (start, stop) = (start.0, stop.0);
+    for i in num::iter::range(start, stop) {
+        crate::fall::omega(NonZero(i));
+    }
     true
 }
 
 /// Same as check_range_omega, but takes advantage of knowing all the numbers in the range are odd first
-pub fn omega_all_odds(start: NonZeroU128, end: NonZeroU128, step: NonZeroUsize) -> bool {
-    let start: u128 = start.into();
-    let end: u128 = end.into();
-    let step: usize = step.into();
+pub fn omega_all_odds<T: Collatz>(start: NonZero<T>, stop: NonZero<T>) -> bool {
+    let (start, stop) = (start.0, stop.0);
 
-    assert_eq!(step & 1, 1);
-    assert!(start < end);
-
-    (start..end).step_by(step).for_each(|x| {
-        crate::fall::omega(x.try_into().unwrap());
-        black_box(());        
+    num::iter::range(start, stop).step_by(2).for_each(|x| {
+        crate::fall::omega(NonZero(x));
+        black_box(());
     });
     true
 }
 
-/// Multi-threaded version of check_range::alpha
-#[cfg(feature = "threaded")]
-pub fn alpha_threaded(start: NonZeroU128, end: NonZeroU128) -> bool {
-    let start: u128 = start.into();
-    let end: u128 = end.into();
+// /// Multi-threaded version of check_range::alpha
+// #[no_panic]
+// // #[cfg(feature = "threaded")]
+// pub fn alpha_threaded(start: NonZero<u128>, stop: NonZero<u128>) -> bool {
+//     use rayon::{iter::IntoParallelIterator, prelude::ParallelIterator};
 
-    use rayon::prelude::{IntoParallelIterator, ParallelIterator};
-    (start..end).into_par_iter().all(|n| {
-        crate::fall::alpha(n.try_into().unwrap());
-        true
-    })
-}
+//     let (start, stop) = (start.0, stop.0);
 
-/// Multi-threaded version of check_range::omega
-#[cfg(feature = "threaded")]
-pub fn omega_threaded(start: NonZeroU128, end: NonZeroU128) -> bool {
-    let start: u128 = start.into();
-    let end: u128 = end.into();
+//     (start..stop).into_par_iter().all(|n| {
+//         crate::fall::alpha(NonZero(n));
+//         true
+//     })
+// }
 
-    let start = if start < 5 {5} else {start};
-
-    use rayon::prelude::{IntoParallelIterator, ParallelIterator};
-    
-    (start..end)
-    .into_par_iter()
-    .for_each(|n| {
-        crate::fall::omega(n.try_into().unwrap())
-    });
-    true
-}
+// /// Multi-threaded version of check_range::omega
+// #[no_panic]
+// pub fn omega_threaded(start: u128, stop: u128) -> Option<bool> {
+//     use rayon::{iter::IntoParallelIterator, prelude::ParallelIterator};
+//     if start.is_zero() || stop.is_zero() {
+//         None
+//     } else {
+//         Some((start..stop).into_par_iter().all(|n| {
+//             crate::fall::omega(NonZero(n));
+//             true
+//         }))
+//     }
+// }
