@@ -5,6 +5,7 @@ edition = "2021"
 authors = ["beetle"]
 description = "A collection of functions relating to the Collatz conjecture"
 license = "MIT"
+repository = "https://github.com/Mearkatz/beetle_collatz"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
