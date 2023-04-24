@@ -4,6 +4,7 @@
 
 use std::fmt::{Debug, Display};
 
+use beetle_nonzero::NonZeroUnchecked;
 use no_panic::no_panic;
 // use no_panic::no_panic;
 use num::{FromPrimitive, Integer, PrimInt, Unsigned};
@@ -13,39 +14,22 @@ pub trait Collatz: Unsigned + Integer + PrimInt + FromPrimitive + Debug + Displa
 
 impl<T> Collatz for T where T: Unsigned + Integer + PrimInt + FromPrimitive + Debug + Display {}
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
-/// Represents a single non-zero unsigned integer,
-/// which can be used with the functions in this crate
-pub struct NonZero<T: Collatz>(T);
-
-impl<T: Collatz> NonZero<T> {
-    /// Tries making a NonZero<T> from a T.
-    /// Only returns None if N equals zero.
-    pub fn try_new(n: T) -> Option<Self> {
-        if n.is_zero() {
-            None
-        } else {
-            Some(Self(n))
-        }
-    }
-}
-
 /// This has the effect of dividing a number by 2 until it is odd.
 /// Odd numbers are simply returned.
-pub fn divide_while_even<T: Collatz>(n: NonZero<T>) -> Option<NonZero<T>> {
-    let n = n.0;
+pub fn divide_while_even<T: Collatz>(n: NonZeroUnchecked<T>) -> Option<NonZeroUnchecked<T>> {
+    let n = n.value;
     let trailing_zeros: usize = n.trailing_zeros().try_into().ok()?;
-    Some(NonZero(n >> trailing_zeros))
+    Some(NonZeroUnchecked::new(n >> trailing_zeros))
 }
 
 /// Returns all the numbers N becomes on its way to falling to one.
 #[no_panic]
-pub fn transformations<T: Collatz>(n: NonZero<T>) -> Option<Vec<T>> {
+pub fn transformations<T: Collatz>(n: NonZeroUnchecked<T>) -> Option<Vec<T>> {
     let mut n = n;
-    let mut trans: Vec<T> = vec![n.0];
-    while !n.0.is_one() {
+    let mut trans: Vec<T> = vec![n.value];
+    while !n.value.is_one() {
         n = rules::basic(n)?;
-        trans.push(n.0);
+        trans.push(n.value);
     }
     Some(trans)
 }
@@ -61,7 +45,7 @@ mod tests {
     // Make sure the steps returned by steps::omega
     #[test]
     fn steps_range_conforms_to_oeis() {
-        use crate::NonZero;
+        use crate::NonZeroUnchecked;
 
         // Number of steps to reach 1 for integers 1..=72
         let oeis_steps: Vec<u32> = vec![
@@ -71,20 +55,19 @@ mod tests {
             14, 14, 14, 102, 22,
         ];
 
-        let r = 1..(oeis_steps.len() + 1);
-
-        let step_counts: Vec<u32> = r
-            .map(|n| crate::steps::omega(NonZero(n)).unwrap())
+        let step_counts: Vec<u32> = (1..(oeis_steps.len() + 1))
+            .map(|n| crate::steps::omega(NonZeroUnchecked::new(n)).unwrap())
             .collect();
 
-        for i in 0..oeis_steps.len() {
-            println!(
-                "{} => OEIS: {}, LIB: {}",
-                i + 1,
-                oeis_steps[i],
-                step_counts[i]
-            );
-            assert_eq!(oeis_steps[i], step_counts[i]);
-        }
+        // for i in 0..oeis_steps.len() {
+        //     // println!(
+        //     //     "{} => OEIS: {}, LIB: {}",
+        //     //     i + 1,
+        //     //     oeis_steps[i],
+        //     //     step_counts[i]
+        //     // );
+        //     assert_eq!(oeis_steps[i], step_counts[i]);
+        // }
+        assert_eq!(oeis_steps, step_counts);
     }
 }

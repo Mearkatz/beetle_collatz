@@ -1,6 +1,8 @@
 //! For checking to see if ranges of numbers fall to 1
 
-use crate::{Collatz, NonZero};
+use beetle_nonzero::NonZeroUnchecked;
+
+use crate::Collatz;
 use std::hint::black_box;
 
 // trait PrimitiveUnsignedInteger {}
@@ -32,29 +34,29 @@ use std::hint::black_box;
 // }
 
 /// Checks a range of numbers to ensure they all fall to 1.
-pub fn alpha<T: Collatz>(start: NonZero<T>, stop: NonZero<T>) -> bool {
-    let (start, stop) = (start.0, stop.0);
+pub fn alpha<T: Collatz>(start: NonZeroUnchecked<T>, stop: NonZeroUnchecked<T>) -> bool {
+    let (start, stop) = (start.value, stop.value);
     for i in num::iter::range(start, stop) {
-        crate::fall::alpha(NonZero(i));
+        crate::fall::alpha(NonZeroUnchecked::new(i));
     }
     true
 }
 
 /// Same as check_range_unoptimized but uses fall::omega_boolean instead of fall::standard_boolean
-pub fn omega<T: Collatz>(start: NonZero<T>, stop: NonZero<T>) -> bool {
-    let (start, stop) = (start.0, stop.0);
+pub fn omega<T: Collatz>(start: NonZeroUnchecked<T>, stop: NonZeroUnchecked<T>) -> bool {
+    let (start, stop) = (start.value, stop.value);
     for i in num::iter::range(start, stop) {
-        crate::fall::omega(NonZero(i));
+        crate::fall::omega(NonZeroUnchecked::new(i));
     }
     true
 }
 
 /// Same as check_range_omega, but takes advantage of knowing all the numbers in the range are odd first
-pub fn omega_all_odds<T: Collatz>(start: NonZero<T>, stop: NonZero<T>) -> bool {
-    let (start, stop) = (start.0, stop.0);
+pub fn omega_all_odds<T: Collatz>(start: NonZeroUnchecked<T>, stop: NonZeroUnchecked<T>) -> bool {
+    let (start, stop) = (start.value, stop.value);
 
     num::iter::range(start, stop).step_by(2).for_each(|x| {
-        crate::fall::omega(NonZero(x));
+        crate::fall::omega(NonZeroUnchecked::new(x));
         black_box(());
     });
     true

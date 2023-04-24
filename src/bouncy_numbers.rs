@@ -1,18 +1,20 @@
 //! Functions for finding numbers who take the most steps to reach 1, given the rules.
 
-use crate::{Collatz, NonZero};
+use beetle_nonzero::NonZeroUnchecked;
+
+use crate::Collatz;
 
 /// Finds a number N that takes the most steps S to reach 1 in a given range
 /// Returns (N, S)
 /// Note: the range provided must be ascending
-pub fn alpha<T: Collatz>(start: NonZero<T>, end: NonZero<T>) -> Option<(T, u32)> {
+pub fn alpha<T: Collatz>(start: NonZeroUnchecked<T>, end: NonZeroUnchecked<T>) -> Option<(T, u32)> {
     let mut record_number = T::zero();
     let mut record_steps = 0;
 
-    let (start, end) = (start.0, end.0);
+    let (start, end) = (start.value, end.value);
 
     for i in num::iter::range(start, end) {
-        let steps = crate::steps::omega(NonZero(i))?;
+        let steps = crate::steps::omega(NonZeroUnchecked::new(i))?;
         if record_steps < steps {
             record_number = i;
             record_steps = steps;
@@ -80,14 +82,14 @@ pub fn alpha<T: Collatz>(start: NonZero<T>, end: NonZero<T>) -> Option<(T, u32)>
 /// Finds every number N, which takes more steps to reach 1 than all numbers before it.
 /// Returns this as a sequence starting at START, and ending at END, with every number N paired with its corresponding number of steps S
 pub fn calculate_bouncy_sequence<T: Collatz>(
-    start: NonZero<T>,
-    stop: NonZero<T>,
+    start: NonZeroUnchecked<T>,
+    stop: NonZeroUnchecked<T>,
 ) -> Option<Vec<(T, u32)>> {
     let mut retval = Vec::new();
     let mut record_steps = 0;
 
-    for n in num::iter::range(start.0, stop.0) {
-        let steps = crate::steps::omega(NonZero(n))?;
+    for n in num::iter::range(start.value, stop.value) {
+        let steps = crate::steps::omega(NonZeroUnchecked::new(n))?;
         if steps > record_steps {
             record_steps = steps;
             retval.push((n, steps));
