@@ -1,6 +1,7 @@
 //! A collection of functions relating to the Collatz conjecture
 
 #![deny(missing_docs, unused_imports)]
+#![warn(clippy::unwrap_used)]
 
 use std::fmt::{Debug, Display};
 
