@@ -1,6 +1,7 @@
 //! For checking to see if ranges of numbers fall to 1
 
 use beetle_nonzero::NonZeroUnchecked;
+use no_panic::no_panic;
 
 use crate::Collatz;
 use std::hint::black_box;
@@ -34,6 +35,7 @@ use std::hint::black_box;
 // }
 
 /// Checks a range of numbers to ensure they all fall to 1.
+#[no_panic]
 pub fn alpha<T: Collatz>(start: NonZeroUnchecked<T>, stop: NonZeroUnchecked<T>) -> bool {
     let (start, stop) = (start.value, stop.value);
     for i in num::iter::range(start, stop) {
@@ -43,6 +45,7 @@ pub fn alpha<T: Collatz>(start: NonZeroUnchecked<T>, stop: NonZeroUnchecked<T>) 
 }
 
 /// Same as check_range_unoptimized but uses fall::omega_boolean instead of fall::standard_boolean
+#[no_panic]
 pub fn omega<T: Collatz>(start: NonZeroUnchecked<T>, stop: NonZeroUnchecked<T>) -> bool {
     let (start, stop) = (start.value, stop.value);
     for i in num::iter::range(start, stop) {
@@ -52,6 +55,7 @@ pub fn omega<T: Collatz>(start: NonZeroUnchecked<T>, stop: NonZeroUnchecked<T>) 
 }
 
 /// Same as check_range_omega, but takes advantage of knowing all the numbers in the range are odd first
+#[no_panic]
 pub fn omega_all_odds<T: Collatz>(start: NonZeroUnchecked<T>, stop: NonZeroUnchecked<T>) -> bool {
     let (start, stop) = (start.value, stop.value);
 
