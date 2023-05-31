@@ -1,6 +1,6 @@
 [package]
 name = "beetle-collatz"
-version = "0.4.22"
+version = "0.4.5"
 edition = "2021"
 authors = ["beetle"]
 description = "A collection of functions relating to the Collatz conjecture"
@@ -10,7 +10,7 @@ repository = "https://github.com/Mearkatz/beetle_collatz"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-beetle-nonzero = "0.1.0"
+beetle-nonzero = "0.2.3"
 no-panic = "0.1.20"
 num = "0.4.0"
 # rayon = {version = "1.6.1", optional = true}
