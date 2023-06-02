@@ -3,7 +3,8 @@
 #![deny(missing_docs, unused_imports)]
 #![warn(clippy::unwrap_used)]
 
-pub mod traits;
+mod traits;
+pub use traits::*;
 
 mod impl_traits {
     use std::ops::AddAssign;
@@ -151,7 +152,25 @@ mod tests {
         use crate::traits::Steps;
         use beetle_nonzero::NonZero;
         use num::One;
+
+        // u8
+        let one: NonZero<u8> = NonZero::one();
+        assert_eq!(one.steps_to_one(), Some(0));
+
+        // u16
+        let one: NonZero<u8> = NonZero::one();
+        assert_eq!(one.steps_to_one(), Some(0));
+
+        // u32
         let one: NonZero<u32> = NonZero::one();
+        assert_eq!(one.steps_to_one(), Some(0));
+
+        // u64
+        let one: NonZero<u64> = NonZero::one();
+        assert_eq!(one.steps_to_one(), Some(0));
+
+        // u128
+        let one: NonZero<u128> = NonZero::one();
         assert_eq!(one.steps_to_one(), Some(0));
     }
 
