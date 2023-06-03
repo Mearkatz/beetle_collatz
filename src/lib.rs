@@ -7,25 +7,22 @@ mod traits;
 pub use traits::*;
 
 mod impl_traits {
-    use std::ops::AddAssign;
-
     use crate::traits::*;
-    use beetle_nonzero::{NonZero, RangeNonZeroUnsigned};
-    use num::One;
+    use beetle_nonzero::{NonZero, PrimUint, RangeNonZeroUnsigned};
+    use num::{traits::Pow, One};
 
-    impl<T: Collatz> Rules for NonZero<T> {
+    impl<T: PrimUint> Rules for NonZero<T> {
         fn odd_rule(self) -> Self {
-            let one = NonZero::one();
-            let three = one + one + one;
-            self * three + one
+            (self + self + self) + Self::one()
         }
 
         fn even_rule(self) -> Self {
-            self >> 1
+            let two = Self::one() + Self::one();
+            self / two
         }
 
         fn rules(self) -> Self {
-            if self.get().is_even() {
+            if self.is_even() {
                 self.even_rule()
             } else {
                 self.odd_rule()
@@ -33,35 +30,34 @@ mod impl_traits {
         }
 
         fn rules_halve_odds(self) -> Self {
-            if self.get().is_odd() {
-                self.odd_rule() >> 1
+            if self.is_odd() {
+                self.odd_rule().even_rule()
             } else {
-                self >> 1
+                self.even_rule()
             }
         }
 
-        fn rules_remove_trailing_zeros(self) -> Option<Self> {
-            let partial_ans = if self.get().is_odd() {
-                self.odd_rule()
+        fn rules_remove_trailing_zeros(self) -> Self {
+            if self.is_odd() {
+                self.odd_rule().without_trailing_zeros()
             } else {
-                self
-            };
-            partial_ans.without_trailing_zeros()
+                self.without_trailing_zeros()
+            }
         }
     }
 
-    impl<T: Collatz> Steps for NonZero<T> {
-        fn steps_to_one(mut self) -> Option<u64> {
+    impl<T: PrimUint> Steps for NonZero<T> {
+        fn steps_to_one(mut self) -> u64 {
             let mut steps = 0;
 
             while !self.is_one() {
                 self = self.rules();
                 steps += 1;
             }
-            Some(steps)
+            steps
         }
 
-        fn steps_to_decrease(mut self) -> Option<u64> {
+        fn steps_to_decrease(mut self) -> u64 {
             let mut steps = 0;
             let starting_value = self;
 
@@ -70,16 +66,16 @@ mod impl_traits {
                 steps += 1;
             }
 
-            Some(steps)
+            steps
         }
 
-        fn steps_to_one_for_even_number(self) -> Option<u64> {
+        fn steps_to_one_for_even_number(self) -> u64 {
             let steps_to_become_odd: u64 = self.get().trailing_zeros().into();
-            let without_zeros = self.without_trailing_zeros()?;
-            Some(steps_to_become_odd + without_zeros.steps_to_one_for_odd_number()?)
+            let without_zeros = self.without_trailing_zeros();
+            steps_to_become_odd + without_zeros.steps_to_one_for_odd_number()
         }
 
-        fn steps_to_one_for_odd_number(mut self) -> Option<u64> {
+        fn steps_to_one_for_odd_number(mut self) -> u64 {
             let mut steps = 0;
             while !self.is_one() {
                 // Number is known to be odd here,
@@ -91,29 +87,30 @@ mod impl_traits {
                 // so remove trailing zeros,
                 // and count each trailing zeros as a step
                 let tz = self.get().trailing_zeros();
-                self = self.without_trailing_zeros()?;
+                self = self.without_trailing_zeros();
                 steps += tz as u64;
             }
-            Some(steps)
+            steps
         }
     }
 
-    // Impl for Primitive Integers (and BigInts apparently ??? What the fuck ???)
-    impl<T: Collatz> WithoutTrailingZeros for NonZero<T> {
-        type R = Option<Self>;
+    impl<T: PrimUint> WithoutTrailingZeros for NonZero<T> {
+        type R = Self;
         fn without_trailing_zeros(&self) -> Self::R {
-            let zeros: usize = self.get().trailing_zeros().try_into().ok()?;
-            Some(*self >> zeros)
+            let zeros: u32 = self.get().trailing_zeros();
+            let two = Self::one() + Self::one();
+            let power_of_two = two.pow(zeros);
+            *self / power_of_two
         }
     }
 
-    impl<T: Collatz + Steps + AddAssign> Bouncy for NonZero<T> {
+    impl<T: PrimUint> Bouncy for NonZero<T> {
         fn is_bouncy(&self) -> Option<bool> {
-            let steps: u64 = self.get().steps_to_one()?;
+            let steps: u64 = self.steps_to_one();
             // let range: Range<T> = num::iter::range(T::zero(), value);
             let range = RangeNonZeroUnsigned::new(NonZero::one(), *self);
             for x in range {
-                let x_steps: u64 = x.steps_to_one()?;
+                let x_steps: u64 = x.steps_to_one();
                 if x_steps >= steps {
                     return Some(false);
                 }
@@ -122,20 +119,23 @@ mod impl_traits {
         }
     }
 
-    impl<T: Collatz + Rules> Transformations for NonZero<T> {
-        fn transformations_to_one(mut self) -> Option<Vec<Self>> {
+    impl<T: PrimUint> Transformations for NonZero<T> {
+        fn transformations_to_one(mut self) -> Vec<Self> {
             let mut v = Vec::new();
-            while self.get().is_one() {
+            v.push(self);
+            while !self.is_one() {
                 self = self.rules();
                 v.push(self);
             }
-            Some(v)
+            v
         }
     }
 }
-
-#[allow(clippy::unwrap_used)]
+#[allow(clippy::unwrap_used, unused_imports)]
 mod tests {
+    use beetle_nonzero::{NonZero, RangeNonZeroUnsigned, ToNonZero};
+
+    use crate::Steps;
 
     // Number of steps to reach 1 for integers 1..=72 (according to the Online Encyclopedia of Integer Sequences)
     // For some reason this is counted as dead code currently, but it isn't dead code, I just convert it to a vec, or iter when using it.
@@ -155,38 +155,47 @@ mod tests {
 
         // u8
         let one: NonZero<u8> = NonZero::one();
-        assert_eq!(one.steps_to_one(), Some(0));
+        assert_eq!(one.steps_to_one(), 0);
 
         // u16
-        let one: NonZero<u8> = NonZero::one();
-        assert_eq!(one.steps_to_one(), Some(0));
+        let one: NonZero<u16> = NonZero::one();
+        assert_eq!(one.steps_to_one(), 0);
 
         // u32
         let one: NonZero<u32> = NonZero::one();
-        assert_eq!(one.steps_to_one(), Some(0));
+        assert_eq!(one.steps_to_one(), 0);
 
         // u64
         let one: NonZero<u64> = NonZero::one();
-        assert_eq!(one.steps_to_one(), Some(0));
+        assert_eq!(one.steps_to_one(), 0);
 
         // u128
         let one: NonZero<u128> = NonZero::one();
-        assert_eq!(one.steps_to_one(), Some(0));
+        assert_eq!(one.steps_to_one(), 0);
     }
 
     #[test]
     fn step_counts_for_ranges_are_correct() {
-        use crate::traits::Steps;
+        use beetle_nonzero::NonZero;
         use beetle_nonzero::RangeNonZeroUnsigned;
         let start: u32 = 1;
         let stop: u32 = 73;
         let steps: Vec<u64> = RangeNonZeroUnsigned::from_primitives(start, stop)
             .expect("Failed to produce a RangeNonZeroUnsigned from two primitives")
-            .map(|n| {
-                n.steps_to_one()
-                    .expect("Failed to count how many steps a number took to fall")
-            })
+            .map(|n: NonZero<u32>| n.steps_to_one())
             .collect();
         assert_eq!(steps, OEIS_STEPS.to_vec());
+    }
+
+    #[test]
+    fn transformations_for_numbers_are_correct() {
+        use crate::Transformations;
+        let n: NonZero<u32> = 4u32.to_nonzero().unwrap();
+        let transforms = n.transformations_to_one();
+        let expected_transformations: Vec<NonZero<u32>> = [4, 2, 1]
+            .into_iter()
+            .map(|x: u32| x.to_nonzero().unwrap())
+            .collect();
+        assert_eq!(transforms, expected_transformations);
     }
 }
