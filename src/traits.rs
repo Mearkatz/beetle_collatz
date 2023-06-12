@@ -10,18 +10,18 @@ pub trait Collatz: Rules + Steps + WithoutTrailingZeros + Bouncy + Transformatio
 /// Gives access to functions related to the rules of the Collatz Conjecture
 pub trait Rules: Sized {
     /// Returns `3N + 1`.
-    fn odd_rule(self) -> Self;
+    fn odd_rule(&self) -> Self;
     /// Returns `N / 2`.
-    fn even_rule(self) -> Self;
+    fn even_rule(&self) -> Self;
 
     /// If N is odd, this returns `3N + 1`, otherwise `N / 2`
-    fn rules(self) -> Self;
+    fn rules(&self) -> Self;
 
     /// If N is odd, this returns `(3N + 1) / 2`, otherwise `N / 2`.    
-    fn rules_halve_odds(self) -> Self;
+    fn rules_halve_odds(&self) -> Self;
 
     /// If N is odd, this returns `3N + 1`, otherwise `N (with any trailing zeros removed)`
-    fn rules_remove_trailing_zeros(self) -> Self;
+    fn rules_remove_trailing_zeros(&self) -> Self;
 }
 
 /// Gives access to functions for counting the steps a number takes to reach 1,
@@ -29,17 +29,17 @@ pub trait Rules: Sized {
 pub trait Steps: Sized {
     /// Returns how many steps a number takes to reach 1,
     /// or None if there is an overflow
-    fn steps_to_one(self) -> u64;
+    fn steps_to_one(&self) -> u64;
 
     /// Returns how many steps a number takes to decrease,
     /// or None if there is an overflow
-    fn steps_to_decrease(self) -> u64;
+    fn steps_to_decrease(&self) -> u64;
 
     /// Same as steps_to_one but faster for even numbers
-    fn steps_to_one_for_even_number(self) -> u64;
+    fn steps_to_one_for_even_number(&self) -> u64;
 
     /// Same as steps_to_one but faster for odd numbers
-    fn steps_to_one_for_odd_number(self) -> u64;
+    fn steps_to_one_for_odd_number(&self) -> u64;
 }
 
 /// Gives access to a function that returns a copy of a number without trailing zeros
@@ -56,11 +56,11 @@ pub trait WithoutTrailingZeros: Sized {
 pub trait Bouncy: Steps {
     /// Returns whether this number takes more steps to fall to one than all the previous numbers.
     /// Returns None if an overflow happens when calling `steps_to_one` on any integer along the way.
-    fn is_bouncy(&self) -> Option<bool>;
+    fn is_bouncy(&self) -> bool;
 }
 
 /// Gives access to a function that shows the transformations of a number as it falls to one
 pub trait Transformations: Rules {
     /// Returns every number that this number becomes as it falls to one
-    fn transformations_to_one(self) -> Vec<Self>;
+    fn transformations_to_one(&self) -> Vec<Self>;
 }
