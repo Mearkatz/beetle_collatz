@@ -64,7 +64,7 @@ mod impl_nonzero {
             let mut steps = 0;
 
             let starting_value = *self;
-            while n > starting_value {
+            while n >= starting_value {
                 n = n.rules();
                 steps += 1;
             }
@@ -197,7 +197,7 @@ mod impl_nonzero_biguint {
             let mut steps = 0;
             let starting_value = self.clone();
 
-            while n > starting_value {
+            while n >= starting_value {
                 n = n.rules();
                 steps += 1;
             }
