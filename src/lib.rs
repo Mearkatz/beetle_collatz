@@ -63,8 +63,12 @@ mod impl_nonzero {
             let mut n = *self;
             let mut steps = 0;
 
+            // Apply rules once beforehand for a potential performance gain.
+            n = n.rules();
+            steps += 1;
+
             let starting_value = *self;
-            while n >= starting_value {
+            while n > starting_value {
                 n = n.rules();
                 steps += 1;
             }
