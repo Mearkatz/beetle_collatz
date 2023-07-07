@@ -60,6 +60,10 @@ mod impl_nonzero {
         }
 
         fn steps_to_decrease(&self) -> u64 {
+            if self.is_even() {
+                return 1;
+            }
+
             let mut n = *self;
             let mut steps = 0;
 
@@ -94,9 +98,9 @@ mod impl_nonzero {
                 // After the odd rule is applied, the resulting number is always even,
                 // so remove trailing zeros,
                 // and count each trailing zeros as a step
-                let tz = n.trailing_zeros();
+                let tz = n.trailing_zeros() as u64;
                 n = n.without_trailing_zeros();
-                steps += tz as u64;
+                steps += tz;
             }
             steps
         }
