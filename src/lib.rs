@@ -66,21 +66,16 @@ mod impl_nonzero {
 
             let mut n = *self;
             let mut steps = 0;
-
-            let butterscotch_ripple = |mut x: Self, mut step_count: u64| -> (Self, u64) {
-                x = x.odd_rule();
-                let tz = x.trailing_zeros() as u64;
-                x = x.without_trailing_zeros();
-                step_count += tz + 1;
-                (x, step_count)
-            };
-
             // Apply rules once beforehand for a potential performance gain.
-            (n, steps) = butterscotch_ripple(n, steps);
+            n = n.odd_rule();
+            steps += (n.trailing_zeros() as u64) + 1;
+            n = n.without_trailing_zeros();
 
             let starting_value = *self;
             while n > starting_value {
-                (n, steps) = butterscotch_ripple(n, steps);
+                n = n.odd_rule();
+                steps += (n.trailing_zeros() as u64) + 1;
+                n = n.without_trailing_zeros();
             }
 
             steps
