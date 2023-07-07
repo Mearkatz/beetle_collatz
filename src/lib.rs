@@ -8,8 +8,8 @@ pub use traits::*;
 
 mod impl_nonzero {
     use crate::traits::*;
-    use beetle_nonzero::{ranges::RangeNonZeroUnsigned, traits::*, NonZero};
-    use num::{traits::Pow, One};
+    use beetle_nonzero::{nonzero::NonZero, ranges::RangeNonZeroUnsigned, traits::*};
+    use num::One;
 
     impl<T: PrimUint> Rules for NonZero<T> {
         fn odd_rule(&self) -> Self {
@@ -110,10 +110,12 @@ mod impl_nonzero {
     impl<T: PrimUint> WithoutTrailingZeros for NonZero<T> {
         type R = Self;
         fn without_trailing_zeros(&self) -> Self::R {
-            let zeros: u32 = self.trailing_zeros();
-            let two = Self::one() + Self::one();
-            let power_of_two = two.pow(zeros);
-            *self / power_of_two
+            // let zeros: u32 = self.trailing_zeros();
+            // let two = Self::one() + Self::one();
+            // let power_of_two = two.pow(zeros);
+            // *self / power_of_two
+
+            self.shift_right(self.get().trailing_zeros() as usize)
         }
     }
 
@@ -148,7 +150,7 @@ mod impl_nonzero {
 
 mod impl_nonzero_biguint {
     use crate::traits::*;
-    use beetle_nonzero::{ranges::RangeNonZeroBigUint, NonZeroBigUint};
+    use beetle_nonzero::{nonzero_biguint::NonZeroBigUint, ranges::RangeNonZeroBigUint};
     use num::{traits::Pow, One};
 
     impl Rules for NonZeroBigUint {
@@ -286,9 +288,10 @@ mod impl_nonzero_biguint {
 #[allow(clippy::unwrap_used, unused_imports)]
 mod tests {
     use beetle_nonzero::{
+        nonzero::NonZero,
+        nonzero_biguint::NonZeroBigUint,
         ranges::{RangeNonZeroBigUint, RangeNonZeroUnsigned},
         traits::ToNonZero,
-        NonZero, NonZeroBigUint,
     };
 
     use crate::Steps;
@@ -306,7 +309,7 @@ mod tests {
     #[test]
     fn step_counts_for_integers_are_correct() {
         use crate::traits::Steps;
-        use beetle_nonzero::NonZero;
+        use beetle_nonzero::nonzero::NonZero;
         use num::One;
 
         // u8
@@ -336,7 +339,7 @@ mod tests {
 
     #[test]
     fn step_counts_for_ranges_are_correct() {
-        use beetle_nonzero::{ranges::RangeNonZeroUnsigned, NonZero};
+        use beetle_nonzero::ranges::RangeNonZeroUnsigned;
 
         // U32
         let start: u32 = 1;
