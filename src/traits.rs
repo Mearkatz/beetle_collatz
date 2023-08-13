@@ -38,15 +38,6 @@ pub trait Steps: Sized {
     fn steps_to_decrease_for_odd_number(&self) -> u64;
 }
 
-/// Gives access to a function that returns a copy of a number without trailing zeros
-pub trait WithoutTrailingZeros: Sized {
-    /// Return type for `without_trailing_zeros`
-    type R;
-    /// Returns a copy of a number with its trailing zeros removed.
-    /// This also is effectively the same as dividing the number by 2 until it is odd.
-    fn without_trailing_zeros(&self) -> Self::R;
-}
-
 /// Gives access to a function that determines if a number if 'bouncy'.
 /// I made the term up, but I'm sure there's a proper term for it somewhere.
 pub trait Bouncy: Steps {

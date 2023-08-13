@@ -7,10 +7,10 @@ use std::ops::Add;
 
 use beetle_nonzero::{
     ranges::RangeNonZero,
-    traits::{TrailingZeros, Uint},
+    traits::{TrailingZeros, Uint, WithoutTrailingZeros},
     NonZero,
 };
-use num::{traits::Pow, One};
+use num::One;
 pub use traits::*;
 
 #[inline(always)]
@@ -38,7 +38,7 @@ where
 }
 impl<T: Uint> Rules for NonZero<T>
 where
-    NonZero<T>: TrailingZeros,
+    NonZero<T>: WithoutTrailingZeros,
 {
     #[inline(always)]
     fn odd_rule(&self) -> Self {
@@ -81,7 +81,7 @@ where
 impl<T> Steps for NonZero<T>
 where
     T: Uint,
-    NonZero<T>: TrailingZeros,
+    NonZero<T>: WithoutTrailingZeros,
 {
     fn steps_to_one(&self) -> u64 {
         let mut n: NonZero<T> = self.clone();
@@ -146,20 +146,6 @@ where
     }
 }
 
-impl<T> WithoutTrailingZeros for NonZero<T>
-where
-    T: Uint,
-    NonZero<T>: TrailingZeros,
-{
-    type R = Self;
-    fn without_trailing_zeros(&self) -> Self::R {
-        let zeros: u32 = self.trailing_zeros() as u32;
-        let teu: Self = two();
-        let power_of_two: Self = teu.pow(zeros);
-        self.clone() / power_of_two
-    }
-}
-
 impl<T> Bouncy for NonZero<T>
 where
     T: Uint,
@@ -181,7 +167,7 @@ where
 
 impl<T> Transformations for NonZero<T>
 where
-    NonZero<T>: TrailingZeros,
+    NonZero<T>: WithoutTrailingZeros,
     T: Uint,
 {
     fn transformations_to_one(&self) -> Vec<Self> {
