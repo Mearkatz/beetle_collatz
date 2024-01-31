@@ -1,66 +1,35 @@
 //! A collection of functions relating to the Collatz conjecture
 
-#![deny(missing_docs, unused, clippy::unwrap_used)]
+pub mod traits;
+use std::ops::{Add, Shr};
 
-mod traits;
-use std::ops::Add;
-
-use beetle_nonzero::{
-    ranges::RangeNonZero,
-    traits::{TrailingZeros, Uint, WithoutTrailingZeros},
-    NonZero,
-};
-use num::One;
+use beetle_nonzero::NonZero;
+use num::{Integer, One, PrimInt};
 pub use traits::*;
 
-#[inline(always)]
-pub(crate) fn one<T>() -> T
-where
-    T: num::One,
-{
-    T::one()
-}
+impl<T> TwoThree for T where T: PrimInt + Integer + One + Add<Output = T> {}
 
-#[inline(always)]
-pub(crate) fn two<T>() -> T
+impl<T> Rules for NonZero<T>
 where
-    T: num::One + Add<Output = T>,
+    T: PrimInt + Integer + Shr<u32, Output = T>,
 {
-    T::one() + T::one()
-}
-
-#[inline(always)]
-pub(crate) fn three<T>() -> T
-where
-    T: num::One + Add<Output = T>,
-{
-    T::one() + T::one() + T::one()
-}
-impl<T: Uint> Rules for NonZero<T>
-where
-    NonZero<T>: WithoutTrailingZeros,
-{
-    #[inline(always)]
-    fn odd_rule(&self) -> Self {
-        self.clone() * three() + one()
+    fn odd_rule(self) -> Self {
+        unsafe { self.map_unchecked(|x| x * T::three() + T::one()) }
     }
 
-    #[inline(always)]
-    fn even_rule(&self) -> Self {
-        self.clone() / two()
+    fn even_rule(self) -> Self {
+        unsafe { self.map_unchecked(|x| x / T::two()) }
     }
 
-    #[inline]
-    fn rules(&self) -> Self {
-        if self.is_even() {
-            self.even_rule()
-        } else {
+    fn rules(self) -> Self {
+        if self.is_odd() {
             self.odd_rule()
+        } else {
+            self.even_rule()
         }
     }
 
-    #[inline]
-    fn rules_halve_odds(&self) -> Self {
+    fn rules_halve_odds(self) -> Self {
         if self.is_odd() {
             self.odd_rule().even_rule()
         } else {
@@ -68,68 +37,34 @@ where
         }
     }
 
-    #[inline]
-    fn rules_remove_trailing_zeros(&self) -> Self {
-        if self.is_odd() {
-            self.odd_rule().without_trailing_zeros()
-        } else {
-            self.without_trailing_zeros()
-        }
+    fn rules_remove_trailing_zeros(self) -> Self {
+        let x = if self.is_odd() { self.odd_rule() } else { self };
+        x.without_trailing_zeros()
     }
 }
 
 impl<T> Steps for NonZero<T>
 where
-    T: Uint,
-    NonZero<T>: WithoutTrailingZeros,
+    T: PrimInt + Integer + Shr<u32, Output = T>,
 {
-    fn steps_to_one(&self) -> u64 {
-        let mut n: NonZero<T> = self.clone();
-        let mut steps = 0;
-
-        while !n.is_one() {
-            n = n.rules();
-            steps += 1;
-        }
-        steps
-    }
-
-    fn steps_to_decrease(&self) -> u64 {
+    fn steps_to_one(self) -> u64 {
         if self.is_even() {
-            1
+            self.steps_to_one_for_even_number()
         } else {
-            self.steps_to_decrease_for_odd_number()
+            self.steps_to_one_for_odd_number()
         }
     }
 
-    fn steps_to_decrease_for_odd_number(&self) -> u64 {
-        let mut n = self.clone();
-        let mut steps = 0;
-        // Apply rules once beforehand for a potential performance gain.
-        n = n.odd_rule();
-        steps += n.trailing_zeros() + 1;
-        n = n.without_trailing_zeros();
-
-        let starting_value = self.clone();
-        while n > starting_value {
-            n = n.odd_rule();
-            steps += n.trailing_zeros() + 1;
-            n = n.without_trailing_zeros();
-        }
-
-        steps
-    }
-
-    fn steps_to_one_for_even_number(&self) -> u64 {
-        let steps_to_become_odd: u64 = self.trailing_zeros();
+    fn steps_to_one_for_even_number(self) -> u64 {
+        let steps_to_become_odd: u64 = self.trailing_zeros().into();
         let without_zeros = self.without_trailing_zeros();
         steps_to_become_odd + without_zeros.steps_to_one_for_odd_number()
     }
 
-    fn steps_to_one_for_odd_number(&self) -> u64 {
-        let mut steps = 0;
-        let mut n = self.clone();
-        while !n.is_one() {
+    fn steps_to_one_for_odd_number(self) -> u64 {
+        let mut steps: u64 = 0;
+        let mut n = self;
+        while !n.get().is_one() {
             // Number is known to be odd here,
             // so apply odd rule,
             n = n.odd_rule();
@@ -138,45 +73,51 @@ where
             // After the odd rule is applied, the resulting number is always even,
             // so remove trailing zeros,
             // and count each trailing zeros as a step
-            let tz = n.trailing_zeros();
+            let tz: u64 = n.trailing_zeros().into();
             n = n.without_trailing_zeros();
             steps += tz;
         }
         steps
     }
-}
 
-impl<T> Bouncy for NonZero<T>
-where
-    T: Uint,
-    NonZero<T>: TrailingZeros + Steps,
-{
-    fn is_bouncy(&self) -> bool {
-        let steps: u64 = self.steps_to_one();
-        // let range: Range<T> = num::iter::range(T::zero(), value);
-        let range = RangeNonZero::new(NonZero::one(), self.clone());
-        for x in range {
-            let x_steps: u64 = x.steps_to_one();
-            if x_steps >= steps {
-                return false;
-            }
+    fn steps_to_decrease(self) -> u64 {
+        if self.is_even() {
+            1
+        } else {
+            self.steps_to_decrease_for_odd_number()
         }
-        true
+    }
+
+    fn steps_to_decrease_for_odd_number(self) -> u64 {
+        let mut n = self;
+        let mut steps: u64 = 0;
+
+        n = n.odd_rule();
+        steps += u64::from(n.trailing_zeros()) + 1;
+        n = n.without_trailing_zeros();
+
+        let starting_value = self;
+        while n > starting_value {
+            n = n.odd_rule();
+            steps += u64::from(n.trailing_zeros()) + 1;
+            n = n.without_trailing_zeros();
+        }
+
+        steps
     }
 }
 
 impl<T> Transformations for NonZero<T>
 where
-    NonZero<T>: WithoutTrailingZeros,
-    T: Uint,
+    T: Integer + PrimInt + Shr<u32, Output = T>,
 {
     fn transformations_to_one(&self) -> Vec<Self> {
-        let mut v: Vec<NonZero<T>> = Vec::new();
-        let mut n: NonZero<T> = self.clone();
-        v.push(n.clone());
-        while !n.is_one() {
+        let mut v: Vec<Self> = Vec::new();
+        let mut n: Self = *self;
+        v.push(n);
+        while !n.get().is_one() {
             n = n.rules();
-            v.push(n.clone());
+            v.push(n);
         }
         v
     }
@@ -184,10 +125,9 @@ where
 
 #[allow(clippy::unwrap_used, unused_imports)]
 mod tests {
-    use beetle_nonzero::{ranges::RangeNonZero, NonZero};
-    use num::BigUint;
+    use beetle_nonzero::NonZero;
 
-    use crate::{one, Steps};
+    use crate::{Steps, TwoThree};
 
     // Number of steps to reach 1 for integers 1..=72 (according to the Online Encyclopedia of Integer Sequences)
     // For some reason this is counted as dead code currently, but it isn't dead code, I just convert it to a vec, or iter when using it.
@@ -206,60 +146,53 @@ mod tests {
         use num::One;
 
         // u8
-        let one: NonZero<u8> = NonZero::one();
+        let one: NonZero<u8> = unsafe { NonZero::new_unchecked(1) };
         assert_eq!(one.steps_to_one(), 0);
 
         // u16
-        let one: NonZero<u16> = NonZero::one();
+        let one: NonZero<u16> = unsafe { NonZero::new_unchecked(1) };
         assert_eq!(one.steps_to_one(), 0);
 
         // u32
-        let one: NonZero<u32> = NonZero::one();
+        let one: NonZero<u32> = unsafe { NonZero::new_unchecked(1) };
         assert_eq!(one.steps_to_one(), 0);
 
         // u64
-        let one: NonZero<u64> = NonZero::one();
+        let one: NonZero<u64> = unsafe { NonZero::new_unchecked(1) };
         assert_eq!(one.steps_to_one(), 0);
 
         // u128
-        let one: NonZero<u128> = NonZero::one();
-        assert_eq!(one.steps_to_one(), 0);
-
-        // BigUint
-        let one: NonZero<BigUint> = NonZero::one();
+        let one: NonZero<u128> = unsafe { NonZero::new_unchecked(1) };
         assert_eq!(one.steps_to_one(), 0);
     }
 
     #[test]
     fn step_counts_for_ranges_are_correct() {
-        use beetle_nonzero::ranges::RangeNonZero;
-
-        // U32
         let start: u32 = 1;
         let stop: u32 = 73;
-        let steps: Vec<u64> = RangeNonZero::from_primitives(start, stop)
-            .unwrap()
-            .map(|n: NonZero<u32>| n.steps_to_one())
+        let steps: Vec<u64> = (start..stop)
+            .map(|n| unsafe { NonZero::new_unchecked(n).steps_to_one() })
             .collect();
         assert_eq!(steps, OEIS_STEPS.to_vec());
 
         // BigUint
         let start: u32 = 1;
         let stop: u32 = 73;
-        let big_range: RangeNonZero<BigUint> =
-            RangeNonZero::from_primitives(start.into(), stop.into()).unwrap();
-        let steps: Vec<u64> = big_range.map(|n| n.steps_to_one()).collect();
+
+        let steps: Vec<u64> = (start..stop)
+            .map(|n| unsafe { NonZero::new_unchecked(n).steps_to_one() })
+            .collect();
         assert_eq!(steps, OEIS_STEPS.to_vec());
     }
 
     #[test]
     fn transformations_for_numbers_are_correct() {
         use crate::Transformations;
-        let n: NonZero<u32> = NonZero::new(4u32).unwrap();
+        let n: NonZero<u32> = unsafe { NonZero::new_unchecked(4u32) };
         let transforms = n.transformations_to_one();
         let expected_transformations: Vec<NonZero<u32>> = [4, 2, 1]
             .into_iter()
-            .map(|x: u32| NonZero::new(x).unwrap())
+            .map(|x: u32| unsafe { NonZero::new_unchecked(x) })
             .collect();
         assert_eq!(transforms, expected_transformations);
     }

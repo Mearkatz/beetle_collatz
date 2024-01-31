@@ -9,10 +9,13 @@ repository = "https://github.com/Mearkatz/beetle_collatz"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[lints.clippy]
+enum_glob_use = "deny"
+pedantic = "deny"
+nursery = "deny"
+unwrap_used = "deny"
+expect_used = "deny"
+
 [dependencies]
-beetle-nonzero = "0.3.3"
+beetle-nonzero = "0.3.9"
 num = "0.4.1"
-
-[features]
-default = []
-
